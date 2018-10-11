@@ -178,6 +178,11 @@ Run the self test suite.
 # TODO: make sure default configuration is being used, or prepare it cleaned up (conditionally don't)
 # TODO: check system firewall settings in case fwd is off, prior starting the service, log it but drop it
 
+
+function prefixLibraryLoaded {
+    return 0
+}
+
 fileLibraryLoaded() {
     if rpm=$(rpm -q ${PACKAGES[0]}); then
         sepol=$(rpm -q selinux-policy)
