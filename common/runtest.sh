@@ -39,26 +39,55 @@ rlJournalStart
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
-    # Create file
-    if [[ "$PHASE" =~ "Create" ]]; then
-        rlPhaseStartTest "Create"
-            fileCreate
-        rlPhaseEnd
-    fi
+#    # Create file
+#    if [[ "$PHASE" =~ "Create" ]]; then
+#        rlPhaseStartTest "Create"
+#            fileCreate
+#        rlPhaseEnd
+#    fi
 
     # Self test
     if [[ "$PHASE" =~ "Test" ]]; then
-        rlPhaseStartTest "Test default name"
-            fileCreate
-            rlAssertExists "$fileFILENAME"
+        rlPhaseStartTest "firewalld Setup and Cleanup"
+            rlRun "systemctl stop firewalld"
+            rlRun "firewall-cmd --state" 252 "firewalld is not running"
+            rlAssertGrep "DefaultZone=public" /etc/firewalld/firewalld.conf
+
+            rlRun "fwdSetup"
+            rlRun "firewall-cmd --state" 0 "firewalld is runnig"
+            rlRun "ps -ef | grep firewalld | grep debug=10" 0 "debug level is set to 10"
+
+            rlRun "firewall-cmd --set-default-zone work"
+            rlRun "firewall-cmd --add-service tftp --permanent"
+            rlRun "firewall-cmd --reload"
+            rlAssertGrep "DefaultZone=work" /etc/firewalld/firewalld.conf
+            rlAssertGrep "tftp" /etc/firewalld/zones/work.xml
+
+            rlRun "fwdCleanup"
+            rlRun "firewall-cmd --state" 252 "firewalld is not running"
+            rlAssertGrep "DefaultZone=public" /etc/firewalld/firewalld.conf
+            rlAssertNotExists /etc/firewalld/zones/work.xml
         rlPhaseEnd
-        rlPhaseStartTest "Test filename in parameter"
-            fileCreate "parameter-file"
-            rlAssertExists "parameter-file"
-        rlPhaseEnd
-        rlPhaseStartTest "Test filename in variable"
-            FILENAME="variable-file" fileCreate
-            rlAssertExists "variable-file"
+
+        rlPhaseStartTest "ResetConfig"
+            rlRun "fwdSetup"
+            rlRun "firewall-cmd --set-default-zone work"
+            rlRun "firewall-cmd --add-service tftp --permanent"
+            rlRun "firewall-cmd --reload"
+            rlAssertGrep "DefaultZone=work" /etc/firewalld/firewalld.conf
+            rlAssertGrep "tftp" /etc/firewalld/zones/work.xml
+
+            rlRun "fwdResetConfig"
+            #rlRun "fwdRestart" # included in ResetConfig unless --no-restart is given
+            rlRun "ps -ef | grep firewalld | grep debug=10" 0 "debug level is set to 10"
+            rlAssertGrep "DefaultZone=public" /etc/firewalld/firewalld.conf
+            rlAssertNotExists /etc/firewalld/zones/work.xml
+
+            rlRun "firewall-cmd --add-service smtp"
+            rlRun "fwdResetConfig -n"
+            rlRun "fwdResetConfig --no-restart"
+            rlRun "firewall-cmd --query-service smtp"
+            rlRun "fwdCleanup"
         rlPhaseEnd
     fi
 

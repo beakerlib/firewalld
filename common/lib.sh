@@ -25,9 +25,10 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   library-prefix = fwd
+#   library-version = 0.1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-true <<'=cut'
+: <<'=cut'
 =pod
 
 =head1 NAME
@@ -36,102 +37,166 @@ firewalld/common - Manages firewalld configuration, state and cleanup
 
 =head1 DESCRIPTION
 
---none--
+firewalld BeakerLib library to aid basic and advanced setup workflows.
+
 =cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#true <<'=cut'
-#=pod
-#
-#=head1 VARIABLES
-#
-#Below is the list of global variables. When writing a new library,
-#please make sure that all global variables start with the library
-#prefix to prevent collisions with other libraries.
-#
-#=over
-#
-#=item fileFILENAME
-#
-#Default file name to be used when no provided ('foo').
-#
-#=back
-#
-#=cut
+: <<'=cut'
+=pod
 
-PACKAGES=(
+=head1 VARIABLES
+
+Below is the list of global variables.
+
+=over
+
+=item fwd_IGNORE_CONFIG
+
+Makes fwdSetup not drop existing config nor assert default configuration
+state.
+
+=back
+
+=cut
+
+__fwdPACKAGES=(
     firewalld
     selinux-policy
     nftables
     libnftnl
     libmnl
+    iptables
     )
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-true <<'=cut'
+: <<'=cut'
 =pod
 
 =head1 FUNCTIONS
 
-=head2 fileCreate
-
-Create a new file, name it accordingly and make sure (assert) that
-the file is successfully created.
-
-    fileCreate [filename]
-
-=over
-
-=item filename
-
-Name for the newly created file. Optionally the filename can be
-provided in the FILENAME environment variable. When no file name
-is given 'foo' is used by default.
-
-=back
-
-Returns 0 when the file is successfully created, non-zero otherwise.
-
 =cut
 
-
 __fwdStart() {
-    true
+    #should capture service state by issuing rlService command (consumed by Cleanup)
+    rlServiceStart firewalld
+    # a blocking command is used
+    rlRun "firewall-cmd --state" 0 "firewalld started"
+}
+__fwdStop() {
+    rlServiceStop firewalld
+    firewall-cmd --state -q
+    [[ $? -ne 252 ]] && rlFail "Could not stop firewalld daemon"
 }
 
-# TODO: clean and reset configuration
-fwdResetConfig() {
-    true
-}
-
-# TODO: call reset configuration after backup to own namespace
-fwdSetup() {
-    rlFileBackup --clean /etc/firewalld/ /etc/sysconfig/firewalld
+__fwdCleanConfig() {
+    local fwconfdir
+    local ret=0
     for fwconfdir in /etc/firewalld/*/; do
         if [[ -f $fwconfdir/* ]]; then
             rm -f -- $fwconfdir/*
-            rlWarn "$fwconfdir was not clean"
+            ret=1
         fi
     done
-    rlRun "rpm -V firewalld" 0 "firewalld configuration is default"
-    rlServiceStart firewalld
-    # a blocking command is used
-    rlRun "firewall-cmd --state" 0 "firewalld running"
+    return $ret
 }
 
-# TODO: clean/restore state of configuration before library initialization
-# TODO: restore service status
+__fwdCleanDebugLog() {
+    truncate -s 0 /var/log/firewalld || \
+        rlFail "failed to remove debug log data"
+}
+
+__fwdSubmitLog() {
+    # call me just once, else I'll probably overwrite output by last invocation
+    rlFileSubmit /var/log/firewalld firewalld.log
+}
+
+__fwdSetDebug() {
+    local LEVEL=${1:-10}
+    echo "FIREWALLD_ARGS=--debug=$LEVEL" >> /etc/sysconfig/firewalld || \
+        rlFail "failed to enable debug flag"
+}
+
+: <<'=cut'
+=pod
+
+=head2 fwdSetup
+
+Asserts environment and starts firewalld. Configuration cleanup is attempted
+and default state is verified.
+
+=cut
+
+fwdSetup() {
+    rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld
+    if [[ -z $fwd_IGNORE_CONFIG ]]; then
+        __fwdCleanConfig || rlWarn "$fwconfdir was not clean"
+        rlRun "rpm -V firewalld" 0 "firewalld configuration is in non-changed default"
+    fi
+    __fwdSetDebug
+    __fwdCleanDebugLog
+    rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld
+    __fwdStart
+}
+
+: <<'=cut'
+=pod
+
+=head2 fwdCleanup
+
+Restores configuration and service state before fwdSetup was called.
+
+=cut
+
 fwdCleanup() {
-    rlFileRestore
+    rlFileRestore --namespace fwdlib
+    __fwdSubmitLog
+    __fwdCleanDebugLog
     rlServiceStart firewalld && firewall-cmd --state
     rlServiceRestore firewalld
 }
+
+: <<'=cut'
+=head2 fwdRestart
+
+Restarts firewalld service.
+
+=cut
+
+fwdRestart() {
+    __fwdStart
+}
+
+: <<'=cut'
+=head2 fwdResetConfig
+
+Resets config to state after fwdSetup was called.
+
+=cut
+fwdResetConfig() {
+    local NORESTART=false
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -n|--no-restart)
+                NORESTART=true
+                shift
+                ;;
+        esac
+    done
+
+    rlFileRestore --namespace fwdlib_setup
+    if ! $NORESTART ; then
+        __fwdStart
+    fi
+}
+
 
 # TODO: verify a rule is present in system firewall configuration
 # TODO: abstract over iptables & nftables (using json output)
@@ -140,29 +205,29 @@ fwdCleanup() {
 #   Execution
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-true <<'=cut'
-=pod
-
-=head1 EXECUTION
-
-This library supports direct execution. When run as a task, phases
-provided in the PHASE environment variable will be executed.
-Supported phases are:
-
-=over
-
-=item Create
-
-Create a new empty file. Use FILENAME to provide the desired file
-name. By default 'foo' is created in the current directory.
-
-=item Test
-
-Run the self test suite.
-
-=back
-
-=cut
+#: <<'=cut'
+#=pod
+#
+#=head1 EXECUTION
+#
+#This library supports direct execution. When run as a task, phases
+#provided in the PHASE environment variable will be executed.
+#Supported phases are:
+#
+#=over
+#
+#=item Create
+#
+#Create a new empty file. Use FILENAME to provide the desired file
+#name. By default 'foo' is created in the current directory.
+#
+#=item Test
+#
+#Run the self test suite.
+#
+#=back
+#
+#=cut
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Verification
@@ -174,17 +239,18 @@ Run the self test suite.
 #   check that all required packages are installed. The function
 #   should return 0 only when the library is ready to serve.
 
-# TODO: check components versions, assert them
-# TODO: make sure default configuration is being used, or prepare it cleaned up (conditionally don't)
-# TODO: check system firewall settings in case fwd is off, prior starting the service, log it but drop it
-
 fwdLibraryLoaded() {
-    if rpm=$(rpm -q ${PACKAGES[0]}); then
+    if rpm=$(rpm -q ${__fwdPACKAGES[0]}); then
         sepol=$(rpm -q selinux-policy)
-        rlLogDebug "Library firewalld/common running with $rpm on $sepol in $(getenforce) mode"
+        rlLogInfo "Library firewalld/common running with $rpm on $sepol in $(getenforce) mode"
+
+        for pkg in ${__fwdPACKAGES[@]} kernel-$(uname -r); do
+            rlAssertRpm $pkg
+        done
+
         return 0
     else
-        rlLogError "Package  not installed"
+        rlLogError "firewalld not installed"
         return 1
     fi
 }
@@ -193,7 +259,7 @@ fwdLibraryLoaded() {
 #   Authors
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-true <<'=cut'
+: <<'=cut'
 =pod
 
 =head1 AUTHORS

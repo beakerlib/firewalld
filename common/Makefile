@@ -53,7 +53,7 @@ $(METADATA): Makefile
 	@echo "Type:            Library" >> $(METADATA)
 	@echo "TestTime:        5m" >> $(METADATA)
 	@echo "RunFor:          firewalld" >> $(METADATA)
-	@echo "Requires:        firewalld" >> $(METADATA)
+	@echo "Requires:        firewalld nftables" >> $(METADATA)
 	@echo "Provides:        library(firewalld/common)" >> $(METADATA)
 	@echo "Priority:        Normal" >> $(METADATA)
 	@echo "License:         GPLv2+" >> $(METADATA)
