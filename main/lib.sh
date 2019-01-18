@@ -108,8 +108,10 @@ __fwdCleanConfig() {
 }
 
 __fwdCleanDebugLog() {
-    truncate -s 0 /var/log/firewalld || \
+    local logfile="/var/log/firewalld"
+    truncate -s 0 "$logfile" || \
         rlFail "failed to remove debug log data"
+    restorecon "$logfile"
 }
 
 __fwdSubmitLog() {
