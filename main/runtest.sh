@@ -2,7 +2,7 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   runtest.sh of /CoreOS/firewalld/Library/common
+#   runtest.sh of /CoreOS/firewalld/Library/main
 #   Description: Manages firewalld configuration, restoration and other stuff
 #   Author: Tomas Dolezal <todoleza@redhat.com>
 #
@@ -34,7 +34,7 @@ PHASE=${PHASE:-Test}
 
 rlJournalStart
     rlPhaseStartSetup
-        rlRun "rlImport firewalld/common"
+        rlRun "rlImport firewalld/main"
         rlRun "TmpDir=\$(mktemp -d)" 0 "Creating tmp directory"
         rlRun "pushd $TmpDir"
     rlPhaseEnd

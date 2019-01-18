@@ -1,6 +1,6 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   Makefile of /CoreOS/firewalld/Library/common
+#   Makefile of /CoreOS/firewalld/Library/main
 #   Description: Manages firewalld configuration, restoration and other stuff
 #   Author: Tomas Dolezal <todoleza@redhat.com>
 #
@@ -23,7 +23,7 @@
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-export TEST=/CoreOS/firewalld/Library/common
+export TEST=/CoreOS/firewalld/Library/main
 export TESTVERSION=1.0
 
 BUILT_FILES=
@@ -54,7 +54,7 @@ $(METADATA): Makefile
 	@echo "TestTime:        5m" >> $(METADATA)
 	@echo "RunFor:          firewalld" >> $(METADATA)
 	@echo "Requires:        firewalld nftables" >> $(METADATA)
-	@echo "Provides:        library(firewalld/common)" >> $(METADATA)
+	@echo "Provides:        library(firewalld/main)" >> $(METADATA)
 	@echo "Priority:        Normal" >> $(METADATA)
 	@echo "License:         GPLv2+" >> $(METADATA)
 	@echo "Confidential:    no" >> $(METADATA)

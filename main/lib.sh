@@ -2,7 +2,7 @@
 # vim: dict+=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   lib.sh of /CoreOS/firewalld/Library/common
+#   lib.sh of /CoreOS/firewalld/Library/main
 #   Description: Manages firewalld configuration, restoration and other stuff
 #   Author: Tomas Dolezal <todoleza@redhat.com>
 #
@@ -33,7 +33,7 @@
 
 =head1 NAME
 
-firewalld/common - Manages firewalld configuration, state and cleanup
+firewalld/main - Manages firewalld configuration, state and cleanup
 
 =head1 DESCRIPTION
 
@@ -242,7 +242,7 @@ fwdResetConfig() {
 fwdLibraryLoaded() {
     if rpm=$(rpm -q ${__fwdPACKAGES[0]}); then
         sepol=$(rpm -q selinux-policy)
-        rlLogInfo "Library firewalld/common running with $rpm on $sepol in $(getenforce) mode"
+        rlLogInfo "Library firewalld/main running with $rpm on $sepol in $(getenforce) mode"
 
         for pkg in ${__fwdPACKAGES[@]} kernel-$(uname -r); do
             rlAssertRpm $pkg
