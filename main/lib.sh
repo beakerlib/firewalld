@@ -183,11 +183,17 @@ Resets config to state after fwdSetup was called.
 =cut
 fwdResetConfig() {
     local NORESTART=false
+    local ret=0
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             -n|--no-restart)
                 NORESTART=true
+                shift
+                ;;
+            *)
+                rlLogError "wrong parameter '$1' to ${FUNCNAME[0]}"
+                ret=1
                 shift
                 ;;
         esac
@@ -197,6 +203,7 @@ fwdResetConfig() {
     if ! $NORESTART ; then
         __fwdStart
     fi
+    return $ret
 }
 
 

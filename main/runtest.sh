@@ -87,6 +87,10 @@ rlJournalStart
             rlRun "fwdResetConfig -n"
             rlRun "fwdResetConfig --no-restart"
             rlRun "firewall-cmd --query-service smtp"
+
+            rlRun "fwdResetConfig --badargument" 1
+            rlRun "fwdResetConfig --mor -e" 1
+            rlRun "fwdResetConfig -n"
             rlRun "fwdCleanup"
         rlPhaseEnd
     fi
