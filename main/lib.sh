@@ -179,7 +179,17 @@ fwdRestart() {
 : <<'=cut'
 =head2 fwdResetConfig
 
-Resets config to state after fwdSetup was called.
+Resets config to state after fwdSetup was called and drops runtime firewall config.
+
+    fwdResetConfig [-n|--norestart]
+
+=over
+
+=item -n|--norestart
+
+Do not restart firewalld after reseting permanent config.
+
+=back
 
 =cut
 fwdResetConfig() {
