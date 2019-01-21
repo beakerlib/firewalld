@@ -71,6 +71,7 @@ __fwdPACKAGES=(
     libmnl
     iptables
     )
+__fwd_CONF_FILE="/etc/firewalld/firewalld.conf"
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
@@ -206,6 +207,27 @@ fwdResetConfig() {
     return $ret
 }
 
+: <<'=cut'
+=head2 fwdSetBackend
+Sets firewalld backend to one of `nftables` or `iptables`. Attempt to
+backend when the option is not available will cause Error and return 1.
+
+    fwdSetBackend iptables|nftables
+=cut
+fwdSetBackend() {
+    local NEW_BACKEND="$1"
+    if ! grep -q "FirewallBackend=" $__fwd_CONF_FILE; then
+        rlLogError "${FUNCNAME[0]}: failed to set to $NEW_BACKEND, option not available"
+        return 1
+    fi
+
+    if ! [[ $NEW_BACKEND =~ ^(iptables|nftables)$ ]]; then
+        rlLogError "${FUNCNAME[0]}: wrong backend '$NEW_BACKEND' specified"
+        return 1
+    fi
+    rlRun "sed -ie '/FirewallBackend=/ s/=.*/=$NEW_BACKEND/' $__fwd_CONF_FILE" 0 \
+        "Set firewalld backend to $NEW_BACKEND"
+}
 
 # TODO: verify a rule is present in system firewall configuration
 # TODO: abstract over iptables & nftables (using json output)
