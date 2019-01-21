@@ -101,6 +101,9 @@ rlJournalStart
             rlRun "fwdSetBackend nftables"
             rlAssertGrep "FirewallBackend=nftables" /etc/firewalld/firewalld.conf
             rlRun "fwdSetBackend notiptables" 1 "invalid backend"
+            rlRun "fwdSetBackend iptables" 0 "change to iptables again"
+            rlRun "fwdSetBackend" 0 "reset to default backend (force to nftables)"
+            rlAssertGrep "FirewallBackend=nftables" /etc/firewalld/firewalld.conf
             rlRun "sed -e '/FirewallBackend/d' -i /etc/firewalld/firewalld.conf"
             rlRun "fwdSetBackend iptables" 1 "unsupported change"
             rlRun "fwdCleanup"

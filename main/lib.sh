@@ -221,11 +221,14 @@ fwdResetConfig() {
 =head2 fwdSetBackend
 Sets firewalld backend to one of `nftables` or `iptables`. Attempt to
 backend when the option is not available will cause Error and return 1.
+If backend is not specified, it is set to nftables by default.
 
-    fwdSetBackend iptables|nftables
+    fwdSetBackend [nftables|iptables]
+
 =cut
 fwdSetBackend() {
-    local NEW_BACKEND="$1"
+    local NEW_BACKEND="${1:-nftables}"
+
     if ! grep -q "FirewallBackend=" $__fwd_CONF_FILE; then
         rlLogError "${FUNCNAME[0]}: failed to set to $NEW_BACKEND, option not available"
         return 1
