@@ -137,14 +137,16 @@ and default state is verified.
 =cut
 
 fwdSetup() {
-    rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld
+    rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld \
+        /etc/sysconfig/network-scripts/
     if [[ -z $fwd_IGNORE_CONFIG ]]; then
         __fwdCleanConfig || rlWarn "$fwconfdir was not clean"
         rlRun "rpm -V firewalld" 0 "firewalld configuration is in non-changed default"
     fi
     __fwdSetDebug
     __fwdCleanDebugLog
-    rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld
+    rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld \
+        /etc/sysconfig/network-scripts/
     __fwdStart
 }
 
