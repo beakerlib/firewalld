@@ -160,9 +160,14 @@ Restores configuration and service state before fwdSetup was called.
 =cut
 
 fwdCleanup() {
-    rlFileRestore --namespace fwdlib
     __fwdSubmitLog
     __fwdCleanDebugLog
+    rlFileRestore --namespace fwdlib
+    # make sure no configuration of firewall is left behind
+    if iptables --version | grep -q "nf_tables"; then
+        nft flush ruleset
+    #else # iptables-compat currently unsupported
+    fi
     rlServiceStart firewalld && firewall-cmd --state
     rlServiceRestore firewalld
 }
