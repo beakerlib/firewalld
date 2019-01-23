@@ -125,6 +125,9 @@ __fwdSetDebug() {
     echo "FIREWALLD_ARGS=--debug=$LEVEL" >> /etc/sysconfig/firewalld || \
         rlFail "failed to enable debug flag"
 }
+__fwdLogFunctionEnter() {
+    rlLogInfo "${FUNCNAME[1]} invoked"
+}
 
 : <<'=cut'
 =pod
@@ -160,15 +163,39 @@ Restores configuration and service state before fwdSetup was called.
 =cut
 
 fwdCleanup() {
+    __fwdLogFunctionEnter
     __fwdSubmitLog
+    rlServiceStop firewalld
+    rlRun "firewall-cmd --state" 252 "firewalld stopped"
     __fwdCleanDebugLog
     rlFileRestore --namespace fwdlib
     # make sure no configuration of firewall is left behind
     if iptables --version | grep -q "nf_tables"; then
-        nft flush ruleset
-    #else # iptables-compat currently unsupported
+        rlRun "nft flush ruleset" 0 "resetting system firewall configuration (nft / iptables-nft)"
+    else
+        rlLogInfo "not resetting system firewall configuration on behalf of firewalld (iptables-compat)"
+#       for prefix in ip ip6; do
+#           for table in $(cat /proc/net/${prefix}_tables_names); do
+#               ${prefix}tables -t $table -F
+#               ${prefix}tables -t $table -X
+#               ${prefix}tables -t $table -Z
+#               #todo: reset policies
+#               #todo: ebtables cleanup
+#               case $table in
+#                   nat)
+#                       ;;
+#                   mangle)
+#                       ;;
+#                   security)
+#                       ;;
+#                   raw)
+#                       ;;
+#                   filter)
+#                       ;;
+#               esac
+#           done
+#       done
     fi
-    rlServiceStart firewalld && firewall-cmd --state
     rlServiceRestore firewalld
 }
 
