@@ -200,6 +200,8 @@ fwdCleanup() {
 }
 
 : <<'=cut'
+=pod
+
 =head2 fwdRestart
 
 Restarts firewalld service.
@@ -211,6 +213,8 @@ fwdRestart() {
 }
 
 : <<'=cut'
+=pod
+
 =head2 fwdResetConfig
 
 Resets config to state after fwdSetup was called and drops runtime firewall config.
@@ -252,7 +256,10 @@ fwdResetConfig() {
 }
 
 : <<'=cut'
+=pod
+
 =head2 fwdSetBackend
+
 Sets firewalld backend to one of `nftables` or `iptables`. Attempt to
 backend when the option is not available will cause Error and return 1.
 If backend is not specified, it is set to nftables by default.
