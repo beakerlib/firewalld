@@ -73,6 +73,8 @@ __fwdPACKAGES=(
     )
 __fwd_CONF_FILE="/etc/firewalld/firewalld.conf"
 
+__fwd_SETUP_DONE=false
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #   Functions
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -125,8 +127,15 @@ __fwdSetDebug() {
     echo "FIREWALLD_ARGS=--debug=$LEVEL" >> /etc/sysconfig/firewalld || \
         rlFail "failed to enable debug flag"
 }
+
 __fwdLogFunctionEnter() {
-    rlLogInfo "${FUNCNAME[1]} invoked"
+    rlLogInfo "${FUNCNAME[1]} called"
+}
+
+__fwdAssertSetup() {
+    if ! $__fwd_SETUP_DONE; then
+        rlDie "${FUNCNAME[1]} called without calling fwdSetup first"
+    fi
 }
 
 : <<'=cut'
@@ -137,9 +146,41 @@ __fwdLogFunctionEnter() {
 Asserts environment and starts firewalld. Configuration cleanup is attempted
 and default state is verified.
 
+fwdSetup [-n|--no-start]
+
+=over
+
+=item -n|--norestart
+
+Do not restart firewalld after reseting permanent config.
+
+=back
+
 =cut
 
 fwdSetup() {
+    local NOSTART=false
+    local ret=0
+
+    __fwdLogFunctionEnter
+    if $__fwd_SETUP_DONE; then
+        rlDie "${FUNCNAME[0]} has already been called"
+    fi
+    __fwd_SETUP_DONE=true
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -n|--no-start)
+                NOSTART=true
+                shift
+                ;;
+            *)
+                rlLogError "wrong parameter '$1' to ${FUNCNAME[0]}"
+                ret=1
+                shift
+                ;;
+        esac
+    done
     rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld \
         /etc/sysconfig/network-scripts/
     if [[ -z $fwd_IGNORE_CONFIG ]]; then
@@ -150,7 +191,9 @@ fwdSetup() {
     __fwdCleanDebugLog
     rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld \
         /etc/sysconfig/network-scripts/
-    __fwdStart
+    if ! $NOSTART ; then
+        __fwdStart
+    fi
 }
 
 : <<'=cut'
@@ -163,6 +206,7 @@ Restores configuration and service state before fwdSetup was called.
 =cut
 
 fwdCleanup() {
+    __fwdAssertSetup
     __fwdLogFunctionEnter
     __fwdSubmitLog
     rlServiceStop firewalld
@@ -196,6 +240,7 @@ fwdCleanup() {
 #           done
 #       done
     fi
+    __fwd_SETUP_DONE=false
     rlServiceRestore firewalld
 }
 
@@ -234,6 +279,7 @@ fwdResetConfig() {
     local NORESTART=false
     local ret=0
 
+    __fwdAssertSetup
     while [[ $# -gt 0 ]]; do
         case $1 in
             -n|--no-restart)

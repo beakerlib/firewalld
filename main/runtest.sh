@@ -53,6 +53,9 @@ rlJournalStart
             rlRun "firewall-cmd --state" 252 "firewalld is not running"
             rlAssertGrep "DefaultZone=public" /etc/firewalld/firewalld.conf
 
+            rlRun "fwdSetup -n"
+            rlRun "firewall-cmd --state" 252 "firewalld is not runnig"
+            rlRun "fwdCleanup"
             rlRun "fwdSetup"
             rlRun "firewall-cmd --state" 0 "firewalld is runnig"
             rlRun "ps -ef | grep firewalld | grep debug=10" 0 "debug level is set to 10"
