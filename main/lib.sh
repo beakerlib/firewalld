@@ -95,7 +95,11 @@ __fwdStart() {
 __fwdStop() {
     rlServiceStop firewalld
     firewall-cmd --state -q
-    [[ $? -ne 252 ]] && rlFail "Could not stop firewalld daemon"
+    if [[ $? -ne 252 ]]; then
+        rlFail "Could not stop firewalld daemon"
+    else
+       return 0
+    fi
 }
 
 __fwdCleanConfig() {
@@ -146,13 +150,13 @@ __fwdAssertSetup() {
 Asserts environment and starts firewalld. Configuration cleanup is attempted
 and default state is verified.
 
-fwdSetup [-n|--no-start]
+    fwdSetup [-n|--no-start]
 
 =over
 
-=item -n|--norestart
+=item -n|--no-start
 
-Do not restart firewalld after reseting permanent config.
+Do not start service after setup.
 
 =back
 
@@ -193,6 +197,8 @@ fwdSetup() {
         /etc/sysconfig/network-scripts/
     if ! $NOSTART ; then
         __fwdStart
+    else
+        __fwdStop
     fi
 }
 
@@ -264,11 +270,11 @@ fwdRestart() {
 
 Resets config to state after fwdSetup was called and drops runtime firewall config.
 
-    fwdResetConfig [-n|--norestart]
+    fwdResetConfig [-n|--no-restart]
 
 =over
 
-=item -n|--norestart
+=item -n|--no-restart
 
 Do not restart firewalld after reseting permanent config.
 
