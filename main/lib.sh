@@ -369,7 +369,7 @@ fwdGetBackend() {
         "Getting firewalld backend"
 
     if ! [[ $backend_name =~ ^(iptables|nftables)$ ]]; then
-        rlLogError "${FUNCNAME[0]}: wrong backend '$NEW_BACKEND' detected"
+        rlLogError "${FUNCNAME[0]}: wrong backend '$backend_name' detected"
         return 1
     fi
     echo "$backend_name"
