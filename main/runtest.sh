@@ -97,18 +97,30 @@ rlJournalStart
             rlRun "fwdCleanup"
         rlPhaseEnd
 
-        rlPhaseStartTest "SetBackend"
+        rlPhaseStartTest "SetBackend / GetBackend"
             rlRun "fwdSetup"
+            rlRun "fwdGetBackend > >(tee backend.out)"
+            if ! rlIsRHEL 7; then
+                rlAssertGrep "^nftables$" backend.out
+            else
+                rlAssertGrep "^iptables$" backend.out
+            fi
             rlRun "fwdSetBackend iptables"
+            rlRun "fwdGetBackend > >(tee backend.out)"
+            rlAssertGrep "^iptables$" backend.out
             rlAssertGrep "FirewallBackend=iptables" /etc/firewalld/firewalld.conf
             rlRun "fwdSetBackend nftables"
             rlAssertGrep "FirewallBackend=nftables" /etc/firewalld/firewalld.conf
+            rlRun "fwdGetBackend > >(tee backend.out)"
+            rlAssertGrep "^nftables$" backend.out
             rlRun "fwdSetBackend notiptables" 1 "invalid backend"
             rlRun "fwdSetBackend iptables" 0 "change to iptables again"
             rlRun "fwdSetBackend" 0 "reset to default backend (force to nftables)"
             rlAssertGrep "FirewallBackend=nftables" /etc/firewalld/firewalld.conf
-            rlRun "sed -e '/FirewallBackend/d' -i /etc/firewalld/firewalld.conf"
+            rlRun "sed -e '/FirewallBackend/d' -i /etc/firewalld/firewalld.conf" 0 "remove FirewallBackend option"
             rlRun "fwdSetBackend iptables" 1 "unsupported change"
+            rlRun "fwdGetBackend > >(tee backend.out)" 1
+            rlAssertNotDiffer backend.out /dev/null
             rlRun "fwdCleanup"
         rlPhaseEnd
     fi

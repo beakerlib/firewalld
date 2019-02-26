@@ -335,6 +335,46 @@ fwdSetBackend() {
         "Set firewalld backend to $NEW_BACKEND"
 }
 
+: <<'=cut'
+=pod
+
+=head2 fwdGetBackend
+
+Returns name of firewalld backend as one of `nftables` or `iptables`.
+
+    fwdGetBackend
+
+=cut
+fwdGetBackend() {
+    local backend_name
+    local firewalld_module_inits
+    if ! grep -q "FirewallBackend=" $__fwd_CONF_FILE; then
+        #rlLogError "${FUNCNAME[0]}: failed to set to $NEW_BACKEND, option not available"
+        #return 1
+
+        # for safety, check that nftables are not supported
+        firewalld_module_inits=$(rpm -qa 'python*-firewall' -l | grep '__init__.py$')
+        [[ $? -ne 0 ]] && rlFail "could not query firewalld python modules"
+        if ! grep -q "nftables" $firewalld_module_inits; then
+            # no nftables references, FALLBACK_FIREWALL_BACKEND not used
+            echo "iptables"
+        else
+            rlLogErorr "configuration option missing, refusing call of ${FUNCNAME[0]}"
+            return 1
+        fi
+        return
+    fi
+
+    rlRun "backend_name=\$(sed -rne '/FirewallBackend=/ s/.*=(.+)$/\\1/p' $__fwd_CONF_FILE)" 0 \
+        "Getting firewalld backend"
+
+    if ! [[ $backend_name =~ ^(iptables|nftables)$ ]]; then
+        rlLogError "${FUNCNAME[0]}: wrong backend '$NEW_BACKEND' detected"
+        return 1
+    fi
+    echo "$backend_name"
+}
+
 # TODO: verify a rule is present in system firewall configuration
 # TODO: abstract over iptables & nftables (using json output)
 
