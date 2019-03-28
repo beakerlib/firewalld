@@ -107,8 +107,8 @@ __fwdCleanConfig() {
     local fwconfdir
     local ret=0
     for fwconfdir in /etc/firewalld/*/; do
-        if [[ -f $fwconfdir/* ]]; then
-            rm -f -- $fwconfdir/*
+        if [[ -z $(find "$fwconfdir" -type d -empty) ]]; then
+            rm -vf -- $fwconfdir/*
             ret=1
         fi
     done
