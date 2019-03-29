@@ -189,7 +189,7 @@ fwdSetup() {
     rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld \
         /etc/sysconfig/network-scripts/
     if [[ -z $fwd_IGNORE_CONFIG ]]; then
-        __fwdCleanConfig || rlLogWarning "$fwconfdir was not clean"
+        __fwdCleanConfig || rlLogWarning "default config directory was not clean"
         rlRun "rpm -V firewalld" 0 "firewalld configuration is in non-changed default"
     fi
     __fwdSetDebug
