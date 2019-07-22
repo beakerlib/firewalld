@@ -70,6 +70,11 @@ rlJournalStart
             rlRun "firewall-cmd --state" 252 "firewalld is not running"
             rlAssertGrep "DefaultZone=public" /etc/firewalld/firewalld.conf
             rlAssertNotExists /etc/firewalld/zones/work.xml
+            rlFileBackup --clean /etc/firewalld /etc/sysconfig/firewalld
+            rlRun "echo FOO=BAR >> /etc/sysconfig/firewalld"
+            fwd_NOVERIFY_RPM=1 rlRun "fwdSetup"
+            rlRun "fwdCleanup"
+            rlFileRestore
         rlPhaseEnd
 
         rlPhaseStartTest "ResetConfig"
