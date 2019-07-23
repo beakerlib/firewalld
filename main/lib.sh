@@ -59,9 +59,9 @@ Below is the list of global variables.
 Makes fwdSetup not drop existing config nor assert default configuration
 state.
 
-=item fwd_NOVERIFY_RPM
+=item fwd_VERIFY_RPM
 
-Makes fwdSetup not fail on non-default RPM files (rpm verify).
+Makes fwdSetup assert integrity of installed files by RPM.
 
 =back
 
@@ -194,14 +194,14 @@ fwdSetup() {
         /etc/sysconfig/network-scripts/
     if [[ -z $fwd_IGNORE_CONFIG ]]; then
         __fwdCleanConfig || rlLogWarning "default config directory was not clean"
-        if [[ -z $fwd_NOVERIFY_RPM ]]; then
-            rlRun "rpm -V firewalld" 0 "firewalld configuration is in non-changed default"
-        else
+        if [[ -z $fwd_VERIFY_RPM ]]; then
             rlRun "rpm -V firewalld" 0,1 "check firewalld configuration non-changed default state"
             if [[ $? -ne 0 ]]; then
-                rlLogWarning "firewalld configuration is not in default state"
-                rlLogWarning "accepted because fwd_NOVERIFY_RPM is set"
+                rlLogWarning "firewalld system configuration is not in default state"
+                #rlLogWarning "accepted because fwd_VERIFY_RPM is not set"
             fi
+        else
+            rlRun "rpm -V firewalld" 0 "firewalld configuration is in non-changed default"
         fi
     fi
     __fwdSetDebug

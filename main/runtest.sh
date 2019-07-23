@@ -72,8 +72,11 @@ rlJournalStart
             rlAssertNotExists /etc/firewalld/zones/work.xml
             rlFileBackup --clean /etc/firewalld /etc/sysconfig/firewalld
             rlRun "echo FOO=BAR >> /etc/sysconfig/firewalld"
-            fwd_NOVERIFY_RPM=1 rlRun "fwdSetup"
+            rlRun "fwdSetup" 0 "fwdSetup - run through check of modified firewalld sysconfig file"
             rlRun "fwdCleanup"
+            # following cannot be run while having this test phase to pass (it must fail)
+            #rlRun "fwd_VERIFY_RPM=1 fwdSetup"
+            #rlRun "fwdCleanup"
             rlFileRestore
         rlPhaseEnd
 
