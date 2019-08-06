@@ -74,6 +74,7 @@ __fwdPACKAGES=(
     libnftnl
     libmnl
     iptables
+    ipset
     NetworkManager
     )
 __fwd_CONF_FILE="/etc/firewalld/firewalld.conf"
