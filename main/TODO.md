@@ -19,6 +19,14 @@ firewalld BeakerLib TODOs
    - make use of `jq`, for iptables verify both families or select via parameter [-4|-6]
   * specific rule type match usable for nft/ipt
  * add file to logs bundle
+ * verify option presence via dbus interface
+ * ability to set options
+
+# Runtime modifications
+ * PARAMETERS
+  - NFT_FLUSH to pre-flush anything nftables may contain (to resolve possible
+    test issues in unclean env)
+
 ## NAMESPACES ( for functional tests )
  * consider putting them into a separate library
  * get inspiration from tests/kernel/networking
