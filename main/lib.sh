@@ -436,7 +436,6 @@ fwdLibraryLoaded() {
         rlLogInfo "Library firewalld/main running with $rpm on $sepol in $(getenforce) mode"
 
         for pkg in ${__fwdPACKAGES[@]} kernel-$(uname -r); do
-            [[ $pkg = "iptables" ]] && rlIsRHEL 9 && pkg="${pkg}-nft"
             rlAssertRpm $pkg
         done
 
