@@ -1,0 +1,12 @@
+summary: Manage firewalld setup and cleanup
+description: |
+  BeakerLib library to aid basic and advanced setup workflows.
+  Manages firewalld configuration, restoration and other stuff.
+contact: Tomas Dolezal <todoleza@redhat.com>
+component:
+- firewalld
+test: ./runtest.sh
+framework: beakerlib
+require:
+- firewalld
+- nftables
