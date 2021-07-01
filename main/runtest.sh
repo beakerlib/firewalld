@@ -130,6 +130,27 @@ rlJournalStart
             rlAssertNotDiffer backend.out /dev/null
             rlRun "fwdCleanup"
         rlPhaseEnd
+
+        rlPhaseStartTest "fwdSetup --backup option"
+            rlLogInfo "Single --backup"
+            rlRun "fwdSetup --backup /usr/lib/firewalld/"
+            rlRun "added_file=$(mktemp /usr/lib/firewalld/addedXXXXXX)"
+            rlAssertExists "$added_file"
+            rlRun "fwdCleanup"
+            rlAssertNotExists "$added_file"
+
+            rlLogInfo "Multiple --backup and -n together"
+            rlRun "fwdSetup --backup /usr/lib/firewalld/services/ -n \
+                            --backup /usr/lib/firewalld/zones/"
+            rlRun "firewall-cmd --state" 252 "firewalld is not runnig"
+            rlRun "added_service_file=$(mktemp /usr/lib/firewalld/services/XXXXXX)"
+            rlRun "added_zone_file=$(mktemp /usr/lib/firewalld/zones/XXXXXX)"
+            rlAssertExists "$added_service_file"
+            rlAssertExists "$added_zone_file"
+            rlRun "fwdCleanup"
+            rlAssertNotExists "$added_service_file"
+            rlAssertNotExists "$added_zone_file"
+        rlPhaseEnd
     fi
 
     rlPhaseStartCleanup
