@@ -156,13 +156,27 @@ __fwdAssertSetup() {
 Asserts environment and starts firewalld. Configuration cleanup is attempted
 and default state is verified.
 
-    fwdSetup [-n|--no-start]
+    fwdSetup [-n|--no-start] [--backup PATH]
 
 =over
 
 =item -n|--no-start
 
 Do not start service after setup.
+
+=item --backup I<PATH>
+
+Additional path to save and restore as part of setup and cleanup.
+Passed to C<rlFileBackup>. Can be supplied multiple times.
+
+No matter if this option is specified, the following paths are
+always backed up:
+
+C</etc/firewalld/>
+
+C</etc/sysconfig/firewalld>
+
+C</etc/sysconfig/network-scripts/>
 
 =back
 
@@ -171,6 +185,7 @@ Do not start service after setup.
 fwdSetup() {
     local NOSTART=false
     local ret=0
+    local -a backup_paths
 
     __fwdLogFunctionEnter
     if $__fwd_SETUP_DONE; then
@@ -184,6 +199,10 @@ fwdSetup() {
                 NOSTART=true
                 shift
                 ;;
+            --backup)
+                backup_paths+=("$2")
+                shift 2
+                ;;
             *)
                 rlLogError "wrong parameter '$1' to ${FUNCNAME[0]}"
                 ret=1
@@ -192,7 +211,7 @@ fwdSetup() {
         esac
     done
     rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld \
-        /etc/sysconfig/network-scripts/
+        /etc/sysconfig/network-scripts/ "${backup_paths[@]}"
     if [[ -z $fwd_IGNORE_CONFIG ]]; then
         __fwdCleanConfig || rlLogWarning "default config directory was not clean"
         if [[ -z $fwd_VERIFY_RPM ]]; then
@@ -208,7 +227,7 @@ fwdSetup() {
     __fwdSetDebug
     __fwdCleanDebugLog
     rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld \
-        /etc/sysconfig/network-scripts/
+        /etc/sysconfig/network-scripts/ "${backup_paths[@]}"
     if ! $NOSTART ; then
         __fwdStart
     else
