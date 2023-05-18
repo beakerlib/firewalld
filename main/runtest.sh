@@ -58,6 +58,7 @@ rlJournalStart
             rlRun "fwdSetup"
             rlRun "firewall-cmd --state" 0 "firewalld is runnig"
             rlRun "ps -ef | grep firewalld | grep debug=10" 0 "debug level is set to 10"
+            rlRun "firewall-cmd --info-zone nm-shared" 112 "nm-shared zone is not defined"
 
             rlRun "firewall-cmd --set-default-zone work"
             rlRun "firewall-cmd --add-service tftp --permanent"

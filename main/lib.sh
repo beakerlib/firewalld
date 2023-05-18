@@ -211,7 +211,7 @@ fwdSetup() {
         esac
     done
     rlFileBackup --namespace fwdlib --clean /etc/firewalld/ /etc/sysconfig/firewalld \
-        /etc/sysconfig/network-scripts/ "${backup_paths[@]}"
+        /etc/sysconfig/network-scripts/ /usr/lib/firewalld/ "${backup_paths[@]}"
     if [[ -z $fwd_IGNORE_CONFIG ]]; then
         __fwdCleanConfig || rlLogWarning "default config directory was not clean"
         if [[ -z $fwd_VERIFY_RPM ]]; then
@@ -224,6 +224,19 @@ fwdSetup() {
             rlRun "rpm -V firewalld" 0 "firewalld configuration is in non-changed default"
         fi
     fi
+
+    # remove outstanding configuration files that may interfere with tests (e.g. nm-shared zone)
+    local _f_allowed_files=$(mktemp)
+    local -a _offending_files
+
+    rpm -qla 'firewalld*' > $_f_allowed_files
+    _offending_files=( $(find /usr/lib/firewalld/ -type f | grep -vxFf $_f_allowed_files) )
+    rm $_f_allowed_files
+    for offending_file in ${_offending_files[@]}; do
+        rlLogWarning "removing extraneous definition file: $offending_file"
+        rm $offending_file || rlFail "could not delete $offending_file"
+    done
+
     __fwdSetDebug
     __fwdCleanDebugLog
     rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld \
