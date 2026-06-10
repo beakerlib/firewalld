@@ -95,16 +95,16 @@ __fwd_SETUP_DONE=false
 __fwdStart() {
     #should capture service state by issuing rlService command (consumed by Cleanup)
     rlServiceStart firewalld
-    # a blocking command is used
-    rlRun "firewall-cmd --state" 0 "firewalld started"
+    rlWaitForCmd "firewall-cmd --state"
+    if test $? -eq 1; then
+        rlFail "Failed to start firewalld."
+    fi
 }
 __fwdStop() {
     rlServiceStop firewalld
-    firewall-cmd --state -q
-    if [[ $? -ne 252 ]]; then
+    rlWaitForCmd "firewall-cmd --state -q" -r 252
+    if test $? -eq 1; then
         rlFail "Could not stop firewalld daemon"
-    else
-       return 0
     fi
 }
 
@@ -261,8 +261,7 @@ fwdCleanup() {
     __fwdAssertSetup
     __fwdLogFunctionEnter
     __fwdSubmitLog
-    rlServiceStop firewalld
-    rlRun "firewall-cmd --state" 252 "firewalld stopped"
+    __fwdStop
     __fwdCleanDebugLog
     rlFileRestore --namespace fwdlib
     # make sure no configuration of firewall is left behind
