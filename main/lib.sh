@@ -93,7 +93,12 @@ __fwd_SETUP_DONE=false
 =cut
 
 fwdStart() {
-    #should capture service state by issuing rlService command (consumed by Cleanup)
+    # rlServiceStart will stop the service if it's already running, then it
+    # will start it. Avoid the stop/start.
+    if rlServiceStatus firewalld; then
+        return
+    fi
+
     rlServiceStart firewalld
     rlWaitForCmd "firewall-cmd --state"
     if test $? -eq 1; then
@@ -305,6 +310,7 @@ Restarts firewalld service.
 =cut
 
 fwdRestart() {
+    fwdStop
     fwdStart
 }
 
