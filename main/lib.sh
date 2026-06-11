@@ -92,7 +92,7 @@ __fwd_SETUP_DONE=false
 
 =cut
 
-__fwdStart() {
+fwdStart() {
     #should capture service state by issuing rlService command (consumed by Cleanup)
     rlServiceStart firewalld
     rlWaitForCmd "firewall-cmd --state"
@@ -100,7 +100,7 @@ __fwdStart() {
         rlFail "Failed to start firewalld."
     fi
 }
-__fwdStop() {
+fwdStop() {
     rlServiceStop firewalld
     rlWaitForCmd "firewall-cmd --state -q" -r 252
     if test $? -eq 1; then
@@ -242,9 +242,9 @@ fwdSetup() {
     rlFileBackup --namespace fwdlib_setup --clean /etc/firewalld/ /etc/sysconfig/firewalld \
         /etc/sysconfig/network-scripts/ "${backup_paths[@]}"
     if ! $NOSTART ; then
-        __fwdStart
+        fwdStart
     else
-        __fwdStop
+        fwdStop
     fi
 }
 
@@ -261,7 +261,7 @@ fwdCleanup() {
     __fwdAssertSetup
     __fwdLogFunctionEnter
     __fwdSubmitLog
-    __fwdStop
+    fwdStop
     __fwdCleanDebugLog
     rlFileRestore --namespace fwdlib
     # make sure no configuration of firewall is left behind
@@ -305,7 +305,7 @@ Restarts firewalld service.
 =cut
 
 fwdRestart() {
-    __fwdStart
+    fwdStart
 }
 
 : <<'=cut'
@@ -347,7 +347,7 @@ fwdResetConfig() {
 
     rlFileRestore --namespace fwdlib_setup
     if ! $NORESTART ; then
-        __fwdStart
+        fwdRestart
     fi
     return $ret
 }
