@@ -93,6 +93,8 @@ __fwd_SETUP_DONE=false
 =cut
 
 fwdStart() {
+    __expected_code=${1:-0}
+
     # rlServiceStart will stop the service if it's already running, then it
     # will start it. Avoid the stop/start.
     if rlServiceStatus firewalld; then
@@ -100,7 +102,7 @@ fwdStart() {
     fi
 
     rlServiceStart firewalld
-    rlWaitForCmd "firewall-cmd --state"
+    rlWaitForCmd "firewall-cmd --state" -r ${__expected_code}
     if test $? -eq 1; then
         rlFail "Failed to start firewalld."
     fi
@@ -307,11 +309,17 @@ fwdCleanup() {
 
 Restarts firewalld service.
 
+=over
+
+=item <expected start code>
+
+Optional. The expected start code.
+
 =cut
 
 fwdRestart() {
     fwdStop
-    fwdStart
+    fwdStart $1
 }
 
 : <<'=cut'
